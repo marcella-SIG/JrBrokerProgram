@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SIG Retention Program</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💳</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ============ CONFIG lives in the <script> below ============ */
+:root{
+  --bg:#F2F4F7; --surface:#FFFFFF; --sunk:#E9EDF2;
+  --ink:#14213D; --text:#1F2633; --muted:#5B6576; --line:#DCE1E8;
+  --brass:#9C7733; --done:#2E7D5B; --done-bg:#E3F1EA;
+  --pending:#A86E12; --pending-bg:#FBEFD9; --open:#9AA3B1;
+  --behind:#B0413A; --behind-bg:#F8E4E2;
+  --font:"Familjen Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --emboss:"Share Tech Mono", ui-monospace, "Courier New", monospace;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1322; --surface:#151D30; --sunk:#1B2439;
+    --ink:#E7EBF3; --text:#DDE2EA; --muted:#98A2B4; --line:#283350;
+    --brass:#D2B06A; --done:#5BBE8F; --done-bg:#183429;
+    --pending:#E4A94A; --pending-bg:#3A2D14; --open:#5D6880;
+    --behind:#EC7C73; --behind-bg:#3B1C1B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1322; --surface:#151D30; --sunk:#1B2439;
+  --ink:#E7EBF3; --text:#DDE2EA; --muted:#98A2B4; --line:#283350;
+  --brass:#D2B06A; --done:#5BBE8F; --done-bg:#183429;
+  --pending:#E4A94A; --pending-bg:#3A2D14; --open:#5D6880;
+  --behind:#EC7C73; --behind-bg:#3B1C1B;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+
+/* ---------- header ---------- */
+header.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
+.brand{display:flex;align-items:baseline;gap:10px;color:var(--ink)}
+.brand b{font-size:22px;letter-spacing:.04em;font-weight:700}
+.brand span{font-size:15px;color:var(--muted)}
+@media (max-width:480px){.brand span{display:none}}
+.switch{display:inline-flex;background:var(--sunk);border-radius:10px;padding:3px}
+.switch button{border:0;background:transparent;padding:7px 16px;border-radius:8px;cursor:pointer;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.switch button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(20,33,61,.12)}
+.switch svg{width:13px;height:13px}
+
+.banner{background:var(--pending-bg);color:var(--text);font-size:14px;padding:8px 0}
+.banner .wrap{display:flex;gap:8px;align-items:center}
+main{padding:28px 0 64px}
+
+/* ---------- pickers ---------- */
+.pickers{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:28px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:13px;color:var(--muted);font-weight:500}
+select,.code-input{appearance:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 36px 9px 12px;min-width:200px;font-size:15px}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235B6576' stroke-width='1.6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.updated{margin-left:auto;font-size:13px;color:var(--muted)}
+
+/* ---------- agent hero ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:40px;align-items:center;margin-bottom:40px}
+@media (max-width:820px){.hero{grid-template-columns:1fr;gap:28px}}
+
+.card{position:relative;aspect-ratio:1.586;width:100%;max-width:400px;border-radius:18px;padding:22px 24px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;color:#1E2430;box-shadow:0 18px 40px -18px rgba(20,33,61,.55),0 2px 6px rgba(20,33,61,.18);isolation:isolate}
+.card::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%);transform:translateX(-120%);z-index:-1;pointer-events:none}
+.card.shine::after{animation:shine 1.6s .25s ease-out 1 forwards}
+@keyframes shine{to{transform:translateX(120%)}}
+@media (prefers-reduced-motion:reduce){.card.shine::after{animation:none}}
+.card.silver{background:linear-gradient(135deg,#E3E6EA 0%,#B4BAC3 42%,#EEF0F3 58%,#A3AAB4 100%)}
+.card.gold{background:linear-gradient(135deg,#F0D893 0%,#BE9645 42%,#F5E2A8 58%,#A57D2F 100%)}
+.card.platinum{background:linear-gradient(135deg,#FBFCFE 0%,#DCE4EF 30%,#F3EEF6 52%,#D3DEEC 72%,#EEF2F7 100%);color:#24304A;box-shadow:0 18px 40px -18px rgba(20,33,61,.45),0 2px 6px rgba(20,33,61,.14),inset 0 0 0 1px rgba(255,255,255,.7)}
+.card.black{background:radial-gradient(120% 140% at 0% 0%,#2C3039 0%,#15171C 55%,#0B0C0F 100%);color:#E2CC92}
+.card.black::after{background:linear-gradient(115deg,transparent 30%,rgba(226,204,146,.18) 45%,transparent 60%)}
+.card .row{display:flex;justify-content:space-between;align-items:flex-start}
+.card .logo{font-weight:700;font-size:22px;letter-spacing:.08em}
+.card .logo small{display:block;font-weight:500;font-size:11px;letter-spacing:.02em;opacity:.75}
+.card .tier{font-weight:600;font-size:17px}
+.chip{width:42px;height:32px;border-radius:6px;background:linear-gradient(135deg,#E9D59A,#B99341);position:relative;opacity:.95}
+.chip::before,.chip::after{content:"";position:absolute;border:1px solid rgba(80,60,20,.35)}
+.chip::before{inset:9px 0}.chip::after{inset:0 13px}
+.card.black .chip{background:linear-gradient(135deg,#D7BD7C,#8E7234)}
+.card .name{font-family:var(--emboss);font-size:clamp(17px,4.6vw,22px);letter-spacing:.06em;text-shadow:0 1px 0 rgba(255,255,255,.45),0 -1px 0 rgba(0,0,0,.25);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.black .name{text-shadow:0 1px 0 rgba(0,0,0,.6)}
+.card .meta{display:flex;justify-content:space-between;font-size:12px;opacity:.85}
+.card .meta strong{display:block;font-size:15px;font-family:var(--emboss);font-weight:400;opacity:1}
+
+.summary h1{font-size:clamp(30px,4.4vw,44px);line-height:1.05;margin:0 0 6px;color:var(--ink);font-weight:700;letter-spacing:-.01em}
+.summary .sub{color:var(--muted);margin:0 0 22px}
+.money{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.money b{font-size:28px;color:var(--ink)}
+.money span{color:var(--muted)}
+.bar{height:10px;background:var(--sunk);border-radius:6px;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.bar .d{background:var(--done)}.bar .p{background:var(--pending);opacity:.7}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:0}
+
+.timeline{margin-top:26px}
+.timeline .head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.timeline .head b{color:var(--ink);font-size:17px}
+.track{position:relative;height:6px;background:var(--sunk);border-radius:4px;margin:0 6px}
+.track .fill{position:absolute;left:0;top:0;bottom:0;background:var(--ink);border-radius:4px;opacity:.85}
+.track .stop{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--ink);transform:translate(-50%,-50%)}
+.track .today{position:absolute;top:-7px;width:2px;height:20px;background:var(--brass);transform:translateX(-1px)}
+.stops{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:10px;position:relative}
+.stops div:nth-child(2){position:absolute;transform:translateX(-50%)}
+.stops div:last-child{text-align:right}
+.stops b{display:block;color:var(--text);font-weight:600}
+
+.next{margin-top:24px;padding:14px 16px;border-left:3px solid var(--brass);background:var(--surface);border-radius:0 8px 8px 0}
+.next b{color:var(--ink)}
+
+/* ---------- milestones ---------- */
+.ladder{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:820px){.ladder{grid-template-columns:1fr}}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px 8px}
+.group.now{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.group header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+.group h2{margin:0;font-size:19px;color:var(--ink)}
+.group header span{font-size:14px;color:var(--muted);text-align:right}
+.group .rule{font-size:14px;color:var(--muted);margin:0 0 8px}
+.now-tag{display:inline-block;margin-left:8px;font-size:12px;font-weight:600;background:var(--ink);color:var(--surface);padding:1px 8px;border-radius:20px;vertical-align:3px}
+.item{display:grid;grid-template-columns:22px 1fr auto;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}
+.item:first-of-type{border-top:0}
+.item .lbl{font-weight:500}
+.item .lbl small{display:block;color:var(--muted);font-weight:400;font-size:13px}
+.dot{width:20px;height:20px;border-radius:50%;display:grid;place-items:center}
+.dot svg{width:12px;height:12px}
+.s-done .dot{background:var(--done);color:#fff}
+.s-pending .dot{background:var(--pending-bg);color:var(--pending);border:1.5px solid var(--pending)}
+.s-open .dot{border:1.5px dashed var(--open)}
+.state{font-size:14px;font-weight:600;white-space:nowrap}
+.s-hit .dot{background:var(--brass);color:#fff}
+.s-hit .state{color:var(--brass)}
+.prog{display:flex;align-items:center;gap:8px;margin-top:4px}
+.prog .pb{flex:1;max-width:140px;height:4px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.prog .pb i{display:block;height:100%;background:var(--ink);opacity:.75}
+.prog span{font-size:13px;color:var(--muted)}
+.weeks{margin-top:28px}
+.weeks h2{font-size:19px;color:var(--ink);margin:0 0 4px}
+.weeks p{color:var(--muted);margin:0 0 12px;font-size:14px}
+.weeks table{min-width:760px}
+.weeks td{text-align:right}.weeks th{text-align:right;cursor:default}
+.weeks td:first-child,.weeks th:first-child{text-align:left}
+.weeks td.met{color:var(--done);font-weight:600}
+.weeks td.miss{color:var(--behind)}
+.weeks td.na{color:var(--open)}
+.s-done .state{color:var(--done)}.s-pending .state{color:var(--pending)}.s-open .state{color:var(--muted);font-weight:500}
+
+/* ---------- office grid ---------- */
+.office-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.office-head h1{margin:0;font-size:clamp(28px,4vw,40px);color:var(--ink);line-height:1.1}
+.office-head p{margin:4px 0 0;color:var(--muted)}
+.tiers{display:flex;gap:18px;font-size:14px;color:var(--muted);flex-wrap:wrap}
+.tiers b{color:var(--ink);font-size:18px;margin-right:4px}
+.minis{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px}
+.mini{all:unset;cursor:pointer;display:block;border-radius:14px;min-width:0;width:100%}
+.mini .card{padding:14px 16px;border-radius:14px;max-width:none}
+.mini .card .logo{font-size:15px}.mini .card .logo small{display:none}
+.mini .card .tier{font-size:13px}
+.mini .card .chip{width:30px;height:23px}
+.mini .card .name{font-size:16px}
+.mini .card .meta{font-size:11px}.mini .card .meta strong{font-size:13px}
+.mini .cap{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);padding:8px 4px 0}
+.mini:hover .card{transform:translateY(-2px)}
+.mini .card{transition:transform .15s}
+@media (prefers-reduced-motion:reduce){.mini .card{transition:none}}
+
+/* ---------- MD ---------- */
+.lock{max-width:380px;margin:60px auto;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:34px 28px}
+.lock h1{margin:0 0 6px;font-size:26px;color:var(--ink)}
+.lock p{color:var(--muted);margin:0 0 20px}
+.code-input{width:100%;text-align:center;font-size:26px;letter-spacing:.5em;padding:10px 12px;min-width:0;font-family:var(--emboss)}
+.btn{border:0;background:var(--ink);color:var(--surface);padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;width:100%;margin-top:12px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);width:auto;margin:0}
+.err{color:var(--behind);font-size:14px;min-height:21px;margin-top:10px}
+
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:24px}
+.kpis div{padding:16px 20px;border-left:1px solid var(--line)}
+.kpis div:first-child{border-left:0}
+.kpis b{display:block;font-size:28px;color:var(--ink);line-height:1.2}
+.kpis span{font-size:14px;color:var(--muted)}
+.kpis .warn b{color:var(--behind)}.kpis .wait b{color:var(--pending)}.kpis .hitk b{color:var(--brass)}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.kpis div:nth-child(odd){border-left:0}.kpis div:nth-child(n+3){border-top:1px solid var(--line)}}
+
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:1080px;font-size:14px}
+th{text-align:left;font-weight:600;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface);cursor:pointer;user-select:none}
+th.sorted{color:var(--ink)}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+td:first-child{white-space:normal;min-width:200px}
+tbody tr.row{cursor:pointer}
+tbody tr.row:hover td{background:var(--sunk)}
+tr.detail td{background:var(--bg);padding:18px 20px}
+.nm{font-weight:600;color:var(--ink)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px;padding:2px 10px;border-radius:20px;white-space:nowrap}
+.pill.ok{background:var(--done-bg);color:var(--done)}
+.pill.bad{background:var(--behind-bg);color:var(--behind)}
+.pill.neutral{background:var(--sunk);color:var(--muted)}
+.swatch{display:inline-block;width:22px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px}
+.swatch.silver{background:linear-gradient(135deg,#E3E6EA,#A3AAB4)}
+.swatch.gold{background:linear-gradient(135deg,#F0D893,#A57D2F)}
+.swatch.platinum{background:linear-gradient(135deg,#FBFCFE,#D3DEEC);box-shadow:inset 0 0 0 1px #c6ccd6}
+.swatch.black{background:linear-gradient(135deg,#2C3039,#0B0C0F)}
+.frac{white-space:nowrap}.frac small{color:var(--pending);font-weight:600;margin-left:4px}
+.needs{color:var(--muted);max-width:260px}
+.det{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+@media (max-width:820px){.det{grid-template-columns:1fr 1fr}}
+.det h3{margin:0 0 6px;font-size:14px;color:var(--ink)}
+.det ul{list-style:none;margin:0;padding:0;font-size:13px}
+.det li{padding:3px 0;white-space:normal}
+.det li i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:0}
+.det .s-hit i{background:var(--brass)}.det .s-done i{background:var(--done)}.det .s-pending i{background:var(--pending)}.det .s-open i{border:1.5px dashed var(--open)}
+.det-foot{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:14px}
+.det-foot .note{flex:1;min-width:220px;color:var(--text)}
+.det-foot a{color:var(--ink);font-weight:600}
+
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-size:20px;margin-bottom:6px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><b>SIG</b><span>New Broker Retention Program</span></div>
+    <div class="switch" role="tablist" aria-label="View">
+      <button role="tab" id="tab-agent" aria-selected="true">Agents</button>
+      <button role="tab" id="tab-md" aria-selected="false">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>MD</button>
+    </div>
+  </div>
+</header>
+<div class="banner" id="demoBanner" hidden><div class="wrap">Showing sample data. Add your Apps Script URL to <code>API_URL</code> to load the live tracker.</div></div>
+
+<main><div class="wrap" id="app"><div class="empty"><b>Loading the tracker…</b></div></div></main>
+
+<script>
+/* =====================================================================
+   CONFIG — paste your Apps Script web app URL here (see Code.gs)
+   ===================================================================== */
+const API_URL = 'https://script.google.com/a/macros/sandsig.com/s/AKfycbzdUQDqON12n3Gknf52dJMS3UkQrFM8XzijBTor7AtyNmVSkF24Q9Hun6LXuGwx_MpM/exec';
+
+/* Milestones in Tracker column order (J:AM, MD/Audit pairs). */
+const ITEMS = [
+  {sec:'validation', label:'85%+ on Validation Scorecard', pay:0},
+  {sec:'validation', label:'MD weekly EOW average 8/10+', pay:1},
+  {sec:'input', label:'500+ calls', sub:'4 weeks'},
+  {sec:'input', label:'50+ contacts', sub:'4 weeks'},
+  {sec:'input', label:'2 At Bats', sub:'4 weeks'},
+  {sec:'input', label:'50 roleplays + 4 days in office'},
+  {sec:'output', label:'CC Script roleplay 8+', pay:3},
+  {sec:'output', label:'1 sourced listing', pay:4},
+  {sec:'output', label:'60 offers logged in Rethink', pay:5},
+  {sec:'output', label:'75 proposals input to Rethink', pay:6},
+  {sec:'output', label:'16,500 dials / 1,700 contacts', pay:7},
+  {sec:'culture', label:'SIG Gives'},
+  {sec:'culture', label:'30 deal shares'},
+  {sec:'culture', label:'Weekly PTS call'},
+  {sec:'culture', label:'Office contest'},
+];
+const SECTIONS = {
+  validation:{name:'Validation', short:'V'},
+  input:{name:'Input', short:'I'},
+  output:{name:'Output', short:'O'},
+  culture:{name:'Culture', short:'C'},
+};
+const TIERS = ['Silver','Gold','Platinum','Black'];
+
+/* Sample data so the page previews before it's wired up (mirrors the xlsx). */
+const DEMO = {
+  ok:true, updated:new Date().toISOString(),
+  payouts:[250,250,4500,500,1000,1000,1000,1000,500],
+  windows:{inputDays:120, outputMonths:8, behindDays:21},
+  agents:[
+    {name:'Marcella Test', office:'Austin', md:'Jason', validationDate:'2026-10-20', earned:5000, card:'Platinum',
+     items:[[1,1],[1,1],[1,1],[1,1],[1,1],[1,1],[0,0],[0,0],[0,0],[0,0],[0,0],[1,0],[0,0],[0,0],[0,0]], rethink:'', notes:'Test row'},
+    {name:'Priya Shah', office:'Austin', md:'Jason', validationDate:'2026-07-28', earned:500, card:'Gold',
+     items:[[1,1],[1,1],[1,1],[1,1],[1,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[1,1],[0,0],[0,0],[0,0]], rethink:'https://example.com', notes:'Roleplays lagging; pair with SR for At Bats.'},
+    {name:'Jordan Reyes', office:'Dallas', md:'Example MD', validationDate:'2026-04-02', earned:8500, card:'Platinum',
+     items:[[1,1],[1,1],[1,1],[1,1],[1,1],[1,1],[1,1],[1,1],[1,1],[1,0],[0,0],[1,1],[1,1],[0,0],[0,0]], rethink:'', notes:''},
+    {name:'Tyler Brooks', office:'Dallas', md:'Example MD', validationDate:'', earned:0, card:'Silver',
+     items:Array.from({length:15},()=>[0,0]), rethink:'', notes:'Validation date not set yet.'},
+  ].map(a=>({...a, items:a.items.map(([m,u])=>[!!m,!!u])}))
+};
+DEMO.weeklyTargets = {calls:500, contacts:50, atBats:2, office:4, eow:8, pts:1};
+(function(){ // sample Weekly Log progress
+  const g = (hit,pct,text)=>({hit,pct,text});
+  const P = DEMO.agents.find(a=>a.name==='Priya Shah');
+  P.goals = {1:g(true,1,'Average 8.5 over 6 weeks'),2:g(true,1,'4 of 4 weeks in a row'),3:g(true,1,'4 of 4 weeks in a row'),
+    4:g(true,1,'4 of 4 weeks in a row'),5:g(false,.7,'31 of 50 roleplays, 3 of 4 office weeks in a row'),8:g(false,.15,'9 of 60'),
+    9:g(false,.12,'9 of 75'),10:g(false,.2,'3,410 of 16,500 dials, 322 of 1,700 contacts'),12:g(true,1,'31 of 30'),13:g(false,.5,'2 of 4 weeks in a row')};
+  P.weeks = [
+    {week:'2026-09-28',calls:540,contacts:52,atBats:2,roleplays:6,office:4,eow:8,offers:1,proposals:1,deals:5,pts:1},
+    {week:'2026-10-05',calls:560,contacts:58,atBats:3,roleplays:5,office:4,eow:9,offers:2,proposals:2,deals:6,pts:1},
+    {week:'2026-10-12',calls:512,contacts:55,atBats:2,roleplays:4,office:3,eow:8,offers:1,proposals:1,deals:5,pts:0},
+    {week:'2026-10-19',calls:530,contacts:61,atBats:2,roleplays:6,office:4,eow:9,offers:2,proposals:2,deals:5,pts:1},
+    {week:'2026-10-26',calls:620,contacts:50,atBats:4,roleplays:5,office:4,eow:8,offers:2,proposals:1,deals:5,pts:1},
+    {week:'2026-11-02',calls:648,contacts:46,atBats:2,roleplays:5,office:4,eow:9,offers:1,proposals:2,deals:5},
+  ];
+  const J = DEMO.agents.find(a=>a.name==='Jordan Reyes');
+  J.goals = {9:g(true,1,'78 of 75'),10:g(false,.82,'13,900 of 16,500 dials, 1,410 of 1,700 contacts')};
+})();
+
+/* ---------------- helpers ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => '$' + Math.round(n || 0).toLocaleString('en-US');
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} },
+};
+const sess = {
+  get(k){ try { return sessionStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { sessionStorage.setItem(k,v); } catch(e){} },
+};
+const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const parseDate = s => { if(!s) return null; const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const addMonths = (d,n) => { // matches Sheets EDATE (clamps to month end)
+  const x = new Date(d.getFullYear(), d.getMonth()+n, 1);
+  const last = new Date(x.getFullYear(), x.getMonth()+1, 0).getDate();
+  x.setDate(Math.min(d.getDate(), last)); return x;
+};
+const fmtDate = d => d ? d.toLocaleDateString('en-US',{month:'short', day:'numeric', year:'numeric'}) : '—';
+const dayDiff = (a,b) => Math.round((b - a) / 86400000);
+const icon = {
+  check:'<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.5 6.2l2.3 2.3 4.7-5"/></svg>',
+  clock:'<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="6" r="4.2"/><path d="M6 3.8V6l1.5 1"/></svg>',
+};
+
+/* ---------------- model ---------------- */
+let DATA = null, isDemo = !API_URL, mdKey = sess.get('sig_md_key') || '';
+
+function enrich(a, cfg){
+  const goals = a.goals || {};
+  const st = a.items.map(([md,audit],i) => audit ? 'done' : md ? 'pending' : goals[i] && goals[i].hit ? 'hit' : 'open');
+  const by = sec => ITEMS.map((it,i)=>({...it, i, s:st[i], g:goals[i]})).filter(x => x.sec === sec);
+  const doneN = sec => by(sec).filter(x => x.s==='done').length;
+  const pendN = sec => by(sec).filter(x => x.s==='pending').length;
+  const P = cfg.payouts;
+
+  // Earned (same rules as Tracker!E) — fallback if the sheet value is blank
+  let calc = 0;
+  ITEMS.forEach((it,i)=>{ if(it.pay!=null && st[i]==='done') calc += P[it.pay]; });
+  if (doneN('input') === 4) calc += P[2];
+  if (doneN('culture') >= 2) calc += P[8];
+  // Potential if everything in review clears
+  let potential = 0;
+  ITEMS.forEach((it,i)=>{ if(it.pay!=null && st[i]!=='open') potential += P[it.pay]; });
+  if (doneN('input') + pendN('input') === 4) potential += P[2];
+  if (doneN('culture') + pendN('culture') >= 2) potential += P[8];
+
+  const v = doneN('validation')===2, inp = doneN('input')===4,
+        out = doneN('output')===5, cul = doneN('culture')>=2;
+  const calcCard = v&&inp&&out&&cul ? 'Black' : v&&inp ? 'Platinum' : v ? 'Gold' : 'Silver';
+  const card = TIERS.includes(a.card) ? a.card : calcCard;
+
+  // Windows (same rules as MD Dashboard)
+  const vd = parseDate(a.validationDate), w = cfg.windows;
+  let phase = 'Not set', daysLeft = null, inEnd = null, outEnd = null;
+  if (vd){
+    inEnd = addDays(vd, w.inputDays); outEnd = addMonths(vd, w.outputMonths);
+    const t = today();
+    if (t <= inEnd){ phase='Input'; daysLeft = dayDiff(t, inEnd); }
+    else if (t <= outEnd){ phase='Output'; daysLeft = dayDiff(t, outEnd); }
+    else { phase='Complete'; daysLeft = 0; }
+  }
+  let needs = [];
+  if (phase==='Input') needs = by('input').filter(x=>x.s!=='done').map(x=>x.label);
+  if (phase==='Output'){
+    needs = by('output').filter(x=>x.s!=='done').map(x=>x.label);
+    if (!cul) needs.push(`Culture (${doneN('culture')} of 2)`);
+  }
+  const waiting = st.filter(s=>s==='pending').length;
+  const toCheck = st.filter(s=>s==='hit').length;
+  let flag = 'On track';
+  if (phase==='Complete') flag = 'Window closed';
+  else if (phase==='Not set') flag = 'Add validation date';
+  else if (daysLeft <= w.behindDays && needs.length) flag = 'Behind';
+
+  return {...a, st, by, doneN, pendN, earnedVal: typeof a.earned==='number' ? a.earned : calc,
+          potential, card, phase, daysLeft, vd, inEnd, outEnd, needs, waiting, toCheck, flag, weeks: a.weeks || []};
+}
+
+const total = cfg => cfg.payouts.reduce((s,n)=>s+n,0);
+
+async function load(key){
+  if (isDemo){ DATA = structuredClone(DEMO); }
+  else {
+    const url = API_URL + (key ? (API_URL.includes('?')?'&':'?') + 'key=' + encodeURIComponent(key) : '');
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('The tracker feed returned ' + r.status);
+    DATA = await r.json();
+    if (!DATA.ok) throw new Error('The tracker feed returned no data.');
+  }
+  DATA.agents = DATA.agents.map(a => enrich(a, DATA));
+}
+
+/* ---------------- agent view ---------------- */
+const view = { tab:'agent', office: store.get('sig_office') || '', agent: store.get('sig_agent') || '' };
+
+function offices(){ return [...new Set(DATA.agents.map(a=>a.office).filter(Boolean))].sort(); }
+
+function renderAgentView(){
+  const offs = offices();
+  if (view.office && !offs.includes(view.office)) view.office = '';
+  const pool = DATA.agents.filter(a => !view.office || a.office === view.office)
+                          .sort((a,b)=>a.name.localeCompare(b.name));
+  if (view.agent && !pool.some(a=>a.name===view.agent)) view.agent = '';
+
+  const pickers = `
+    <div class="pickers">
+      <div class="field"><label for="pOffice">Office</label>
+        <select id="pOffice"><option value="">All offices</option>
+          ${offs.map(o=>`<option ${o===view.office?'selected':''}>${esc(o)}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="pAgent">Agent</label>
+        <select id="pAgent"><option value="">Everyone${view.office?' in '+esc(view.office):''}</option>
+          ${pool.map(a=>`<option ${a.name===view.agent?'selected':''}>${esc(a.name)}</option>`).join('')}
+        </select></div>
+      <div class="updated">Updated ${new Date(DATA.updated).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
+    </div>`;
+
+  const a = DATA.agents.find(x=>x.name===view.agent);
+  $('#app').innerHTML = pickers + (a ? agentDetail(a) : officeGrid(pool));
+
+  $('#pOffice').onchange = e => { view.office = e.target.value; view.agent=''; store.set('sig_office', view.office); store.set('sig_agent',''); render(); };
+  $('#pAgent').onchange = e => { view.agent = e.target.value; store.set('sig_agent', view.agent); render(true); };
+  document.querySelectorAll('.mini').forEach(b => b.onclick = () => {
+    view.agent = b.dataset.name; store.set('sig_agent', view.agent); render(true); window.scrollTo({top:0});
+  });
+  const c = document.querySelector('.hero .card');
+  if (c && shineNext){ c.classList.add('shine'); shineNext = false; }
+}
+
+function cardHTML(a){
+  const first = a.name.split(' ')[0];
+  return `<div class="card ${a.card.toLowerCase()}" role="img" aria-label="${esc(a.card)} card for ${esc(a.name)}">
+    <div class="row"><div class="logo">SIG<small>Retention Program</small></div><div class="tier">${esc(a.card)}</div></div>
+    <div class="chip" aria-hidden="true"></div>
+    <div>
+      <div class="name">${esc(a.name.toUpperCase())}</div>
+      <div class="meta">
+        <div>Earned<strong>${money(a.earnedVal)}</strong></div>
+        <div>${esc(a.office || '')}<strong>${a.vd ? a.vd.toLocaleDateString('en-US',{month:'2-digit',year:'2-digit'}) : '--/--'}</strong></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function nextTier(a){
+  const v=a.doneN('validation'), i=a.doneN('input'), o=a.doneN('output'), c=a.doneN('culture');
+  if (a.card==='Silver') return `<b>Next card: Gold.</b> Get both Validation items audited (${v} of 2 so far).`;
+  if (a.card==='Gold') return `<b>Next card: Platinum.</b> Clear all four Input items for the ${money(DATA.payouts[2])} vault (${i} of 4 so far).`;
+  if (a.card==='Platinum') return `<b>Next card: Black.</b> Finish all five Output items (${o} of 5) and any two Culture items (${Math.min(c,2)} of 2).`;
+  return `<b>Black card.</b> Every milestone is cleared. That's the whole program.`;
+}
+
+function timeline(a){
+  if (!a.vd) return `<div class="timeline"><div class="head"><b>No validation date yet</b></div>
+    <p class="sub" style="margin:0">Your windows start once your MD logs your validation date.</p></div>`;
+  const span = dayDiff(a.vd, a.outEnd);
+  const pos = d => Math.max(0, Math.min(100, dayDiff(a.vd, d) / span * 100));
+  const tPos = pos(today());
+  const head = a.phase==='Complete' ? 'Program window closed'
+    : `${a.daysLeft} day${a.daysLeft===1?'':'s'} left in your ${a.phase} window`;
+  return `<div class="timeline">
+    <div class="head"><b>${head}</b>${a.flag==='Behind'?'<span class="pill bad">Behind</span>':''}</div>
+    <div class="track" aria-hidden="true">
+      <div class="fill" style="width:${tPos}%"></div>
+      <div class="stop" style="left:0"></div>
+      <div class="stop" style="left:${pos(a.inEnd)}%"></div>
+      <div class="stop" style="left:100%"></div>
+      <div class="today" style="left:${tPos}%" title="Today"></div>
+    </div>
+    <div class="stops">
+      <div><b>Validated</b>${fmtDate(a.vd)}</div>
+      <div style="left:${pos(a.inEnd)}%"><b>Input ends</b>${fmtDate(a.inEnd)}</div>
+      <div><b>Output ends</b>${fmtDate(a.outEnd)}</div>
+    </div>
+  </div>`;
+}
+
+function itemRow(x){
+  const P = DATA.payouts;
+  const doneTxt = x.pay!=null ? money(P[x.pay]) + ' earned' : 'Done';
+  const txt = x.s==='done' ? doneTxt : x.s==='pending' ? 'In review' : x.s==='hit' ? 'Goal hit' : (x.pay!=null ? money(P[x.pay]) : 'Open');
+  const ic = x.s==='done' ? icon.check : x.s==='pending' ? icon.clock : x.s==='hit' ? icon.check : '';
+  const prog = x.g && x.s!=='done'
+    ? `<div class="prog">${x.g.hit?'':`<div class="pb"><i style="width:${Math.round(x.g.pct*100)}%"></i></div>`}<span>${esc(x.g.text)}${x.s==='hit'?'. Waiting on your MD to confirm.':''}</span></div>` : '';
+  return `<div class="item s-${x.s}"><div class="dot">${ic}</div>
+    <div class="lbl">${esc(x.label)}${x.sub && !prog?`<small>${esc(x.sub)}</small>`:''}${prog}</div>
+    <div class="state">${txt}</div></div>`;
+}
+
+function groupHTML(a, sec){
+  const P = DATA.payouts, d = a.doneN(sec);
+  const info = {
+    validation:{rule:`${money(P[0])} each once audited.`, count:`${d} of 2`},
+    input:{rule:`All four together unlock ${money(P[2])}. First ${DATA.windows.inputDays} days after validation.`,
+           count: d===4 ? money(P[2])+' earned' : `${d} of 4`},
+    output:{rule:`Paid per item. Within ${DATA.windows.outputMonths} months of validation.`, count:`${d} of 5`},
+    culture:{rule:`Any two unlock ${money(P[8])}.`, count: d>=2 ? money(P[8])+' earned' : `${d} of 2`},
+  }[sec];
+  const now = (sec==='input' && a.phase==='Input') || ((sec==='output'||sec==='culture') && a.phase==='Output');
+  return `<section class="group ${now?'now':''}">
+    <header><h2>${SECTIONS[sec].name}${now?'<span class="now-tag">Current window</span>':''}</h2><span>${info.count}</span></header>
+    <p class="rule">${info.rule}</p>
+    ${a.by(sec).map(itemRow).join('')}
+  </section>`;
+}
+
+function agentDetail(a){
+  const T = total(DATA), done = a.earnedVal / T * 100, pend = Math.max(0, (a.potential - a.earnedVal) / T * 100);
+  return `
+    <div class="hero">
+      ${cardHTML(a)}
+      <div class="summary">
+        <h1>${esc(a.name)}</h1>
+        <p class="sub">${esc(a.office || 'No office')}${a.md ? ', MD ' + esc(a.md) : ''}</p>
+        <div class="money"><b>${money(a.earnedVal)}</b><span>of ${money(T)} earned</span></div>
+        <div class="bar" aria-hidden="true"><i class="d" style="width:${done}%"></i><i class="p" style="width:${pend}%"></i></div>
+        <div class="legend"><span><i style="background:var(--done)"></i>Audited and earned</span>
+          <span><i style="background:var(--pending)"></i>In review: ${money(a.potential - a.earnedVal)}</span></div>
+        ${timeline(a)}
+        <div class="next">${nextTier(a)}</div>
+      </div>
+    </div>
+    <div class="ladder">${Object.keys(SECTIONS).map(s=>groupHTML(a,s)).join('')}</div>
+    ${weeksHTML(a)}`;
+}
+
+const WEEK_COLS = [['calls','Calls'],['contacts','Contacts'],['atBats','At Bats'],['roleplays','Roleplays'],
+  ['office','Office days'],['eow','EOW'],['offers','Offers'],['proposals','Proposals'],['deals','Deal shares'],['pts','PTS call']];
+function weeksHTML(a){
+  const T = DATA.weeklyTargets || {};
+  if (!a.weeks.length) return `<section class="weeks"><h2>Week by week</h2><p>Your MD hasn't logged any weeks yet. They'll show up here once they do.</p></section>`;
+  const rows = [...a.weeks].reverse();
+  const cell = (k,v) => {
+    if (v==null || v==='') return `<td class="na">–</td>`;
+    if (k==='pts') return `<td class="${v?'met':'miss'}">${v?'Yes':'No'}</td>`;
+    const cls = T[k]!=null ? (v>=T[k]?'met':'miss') : '';
+    return `<td class="${cls}">${Number(v).toLocaleString('en-US')}</td>`;
+  };
+  const tgt = Object.entries(T).filter(([k])=>k!=='pts').map(([k,v])=>`${(WEEK_COLS.find(c=>c[0]===k)||[,k])[1].toLowerCase()} ${v}+`).join(', ');
+  return `<section class="weeks"><h2>Week by week</h2>
+    <p>From your MD's weekly log. Green means you hit the weekly number (${esc(tgt)}).</p>
+    <div class="tablewrap"><table><thead><tr><th>Week of</th>${WEEK_COLS.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(w=>`<tr><td>${fmtDate(parseDate(w.week))}</td>${WEEK_COLS.map(([k])=>cell(k,w[k])).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+}
+
+function officeGrid(pool){
+  if (!pool.length) return `<div class="empty"><b>No agents yet</b>Add agents to the Tracker tab and they'll show up here.</div>`;
+  const counts = TIERS.map(t => [t, pool.filter(a=>a.card===t).length]);
+  const sorted = [...pool].sort((a,b)=> TIERS.indexOf(b.card)-TIERS.indexOf(a.card) || b.earnedVal-a.earnedVal);
+  return `
+    <div class="office-head">
+      <div><h1>${view.office ? esc(view.office) : 'All offices'}</h1>
+        <p>${pool.length} agent${pool.length===1?'':'s'} in the program. Pick a card to see the full breakdown.</p></div>
+      <div class="tiers">${counts.map(([t,n])=>`<span><b>${n}</b>${t}</span>`).join('')}</div>
+    </div>
+    <div class="minis">
+      ${sorted.map(a=>`<button class="mini" data-name="${esc(a.name)}" aria-label="Open ${esc(a.name)}">
+        ${cardHTML(a)}
+        <div class="cap"><span>${a.phase==='Not set'?'Not started':a.phase==='Complete'?'Window closed':`${esc(a.phase)}: ${a.daysLeft}d left`}</span>
+          <span>${a.waiting?`${a.waiting} in review`:''}</span></div>
+      </button>`).join('')}
+    </div>`;
+}
+
+/* ---------------- MD view ---------------- */
+const md = { office:'', md:'', flag:'', sort:'flag', dir:1, open:null };
+
+function renderLock(msg=''){
+  $('#app').innerHTML = `<form class="lock" id="lockForm" autocomplete="off">
+    <h1>MD dashboard</h1><p>Enter the MD passcode to see every agent, audits waiting, and notes.</p>
+    <input class="code-input" id="code" inputmode="numeric" maxlength="8" aria-label="Passcode" autofocus>
+    <button class="btn" type="submit">Unlock</button>
+    <div class="err" role="alert">${esc(msg)}</div></form>`;
+  $('#lockForm').onsubmit = async e => {
+    e.preventDefault();
+    const code = $('#code').value.trim();
+    let ok = false;
+    try {
+      if (isDemo) ok = code === '1031';
+      else { const r = await fetch(API_URL + (API_URL.includes('?')?'&':'?') + 'check=1&key=' + encodeURIComponent(code)); ok = (await r.json()).ok; }
+    } catch(err){ return renderLock('Could not reach the tracker. Check your connection and try again.'); }
+    if (!ok) return renderLock('That passcode didn’t match. Try again.');
+    mdKey = code; sess.set('sig_md_key', code);
+    await load(mdKey); render();
+  };
+}
+
+const flagRank = {'Behind':0,'Add validation date':1,'On track':2,'Window closed':3};
+
+function renderMD(){
+  if (!mdKey) return renderLock();
+  const A = DATA.agents;
+  const offs = offices(), mds = [...new Set(A.map(a=>a.md).filter(Boolean))].sort();
+  let rows = A.filter(a => (!md.office||a.office===md.office) && (!md.md||a.md===md.md) && (!md.flag||a.flag===md.flag));
+  const key = {
+    name:a=>a.name.toLowerCase(), office:a=>a.office, mdn:a=>a.md, card:a=>TIERS.indexOf(a.card),
+    earned:a=>a.earnedVal, days:a=>a.daysLeft ?? 9999, waiting:a=>a.waiting, check:a=>a.toCheck, flag:a=>flagRank[a.flag] ?? 9,
+  }[md.sort];
+  rows.sort((a,b)=>{ const x=key(a), y=key(b); return (x>y?1:x<y?-1:0)*md.dir || (a.daysLeft??9999)-(b.daysLeft??9999); });
+
+  const paid = rows.reduce((s,a)=>s+a.earnedVal,0);
+  const waiting = rows.reduce((s,a)=>s+a.waiting,0);
+  const toCheck = rows.reduce((s,a)=>s+a.toCheck,0);
+  const behind = rows.filter(a=>a.flag==='Behind').length;
+
+  const frac = (a,sec,of) => `<span class="frac">${a.doneN(sec)}/${of}${a.pendN(sec)?`<small>+${a.pendN(sec)}</small>`:''}</span>`;
+  const flagPill = f => `<span class="pill ${f==='Behind'?'bad':f==='On track'?'ok':'neutral'}">${esc(f)}</span>`;
+  const win = a => a.phase==='Not set' ? '—' : a.phase==='Complete' ? 'Closed' : `${a.phase}, ${a.daysLeft}d`;
+  const th = (k,l) => `<th data-k="${k}" class="${md.sort===k?'sorted':''}" aria-sort="${md.sort===k?(md.dir>0?'ascending':'descending'):'none'}">${l}${md.sort===k?(md.dir>0?' ↑':' ↓'):''}</th>`;
+
+  const detail = a => `<tr class="detail"><td colspan="12">
+    <div class="det">${Object.keys(SECTIONS).map(sec=>`<div><h3>${SECTIONS[sec].name}</h3><ul>
+      ${a.by(sec).map(x=>`<li class="s-${x.s}"><i></i>${esc(x.label)}${x.s==='pending'?' <em style="color:var(--pending);font-style:normal">(needs audit)</em>':x.s==='hit'?' <em style="color:var(--brass);font-style:normal">(log says hit, check MD box)</em>':''}${x.g&&x.s!=='done'&&x.s!=='hit'?` <span style="color:var(--muted)">${esc(x.g.text)}</span>`:''}</li>`).join('')}
+    </ul></div>`).join('')}</div>
+    <div class="det-foot">
+      <div class="note">${a.notes ? '<b>Notes:</b> '+esc(a.notes) : '<span style="color:var(--muted)">No notes on the tracker.</span>'}</div>
+      ${a.rethink ? `<a href="${esc(a.rethink)}" target="_blank" rel="noopener">Open Rethink report</a>` : ''}
+      <button class="btn ghost" data-goto="${esc(a.name)}">Open agent view</button>
+    </div></td></tr>`;
+
+  $('#app').innerHTML = `
+    <div class="pickers">
+      <div class="field"><label for="fOffice">Office</label><select id="fOffice"><option value="">All offices</option>${offs.map(o=>`<option ${o===md.office?'selected':''}>${esc(o)}</option>`).join('')}</select></div>
+      <div class="field"><label for="fMD">MD</label><select id="fMD"><option value="">All MDs</option>${mds.map(o=>`<option ${o===md.md?'selected':''}>${esc(o)}</option>`).join('')}</select></div>
+      <div class="field"><label for="fFlag">Status</label><select id="fFlag"><option value="">Any status</option>${Object.keys(flagRank).map(o=>`<option ${o===md.flag?'selected':''}>${o}</option>`).join('')}</select></div>
+      <div class="updated">Updated ${new Date(DATA.updated).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
+    </div>
+    <div class="kpis">
+      <div><b>${rows.length}</b><span>Agents in view</span></div>
+      <div><b>${money(paid)}</b><span>Earned to date</span></div>
+      <div class="hitk"><b>${toCheck}</b><span>Goals hit, MD box not checked</span></div>
+      <div class="wait"><b>${waiting}</b><span>Items waiting on audit</span></div>
+      <div class="warn"><b>${behind}</b><span>Behind, ${DATA.windows.behindDays} days or less left</span></div>
+    </div>
+    ${rows.length ? `<div class="tablewrap"><table>
+      <thead><tr>${th('name','Agent')}${th('office','Office')}${th('mdn','MD')}${th('card','Card')}${th('earned','Earned')}${th('days','Window')}
+        <th>Validation</th><th>Input</th><th>Output</th><th>Culture</th>${th('check','To check')}${th('flag','Status')}</tr></thead>
+      <tbody>${rows.map(a=>`
+        <tr class="row" data-name="${esc(a.name)}" tabindex="0" aria-expanded="${md.open===a.name}">
+          <td><span class="nm">${esc(a.name)}</span>${a.needs.length&&a.phase!=='Complete'?`<div class="needs">Needs: ${esc(a.needs.join(', '))}</div>`:''}</td>
+          <td>${esc(a.office)}</td><td>${esc(a.md)}</td>
+          <td><span class="swatch ${a.card.toLowerCase()}"></span>${esc(a.card)}</td>
+          <td>${money(a.earnedVal)}</td><td>${win(a)}</td>
+          <td>${frac(a,'validation',2)}</td><td>${frac(a,'input',4)}</td><td>${frac(a,'output',5)}</td><td>${frac(a,'culture',2)}</td>
+          <td>${a.toCheck?`<span class="pill" style="background:var(--pending-bg);color:var(--brass)">${a.toCheck} goal${a.toCheck>1?'s':''} hit</span>`:''}</td>
+          <td>${flagPill(a.flag)}</td>
+        </tr>${md.open===a.name?detail(a):''}`).join('')}</tbody></table></div>
+      <p class="legend" style="margin-top:10px;display:block">Counts are audited items. Amber <b style="color:var(--pending)">+n</b> means checked by the MD and waiting on audit. Gold <b style="color:var(--brass)">goals hit</b> come from the Weekly Log and need the MD box checked on the Tracker. Click a row for the full breakdown.</p>`
+    : `<div class="empty"><b>No agents match these filters</b>Clear a filter to see more of the program.</div>`}`;
+
+  $('#fOffice').onchange = e => { md.office = e.target.value; renderMD(); };
+  $('#fMD').onchange = e => { md.md = e.target.value; renderMD(); };
+  $('#fFlag').onchange = e => { md.flag = e.target.value; renderMD(); };
+  document.querySelectorAll('th[data-k]').forEach(t => t.onclick = () => {
+    const k = t.dataset.k; md.dir = md.sort===k ? -md.dir : (k==='earned'||k==='card'||k==='waiting'||k==='check' ? -1 : 1); md.sort = k; renderMD();
+  });
+  document.querySelectorAll('tr.row').forEach(r => {
+    const toggle = () => { md.open = md.open===r.dataset.name ? null : r.dataset.name; renderMD(); };
+    r.onclick = toggle; r.onkeydown = e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); } };
+  });
+  document.querySelectorAll('[data-goto]').forEach(b => b.onclick = e => {
+    e.stopPropagation(); const a = DATA.agents.find(x=>x.name===b.dataset.goto);
+    view.office = a.office; view.agent = a.name; setTab('agent', true);
+  });
+}
+
+/* ---------------- shell ---------------- */
+let shineNext = true;
+function render(shine){ if (shine) shineNext = true; view.tab==='md' ? renderMD() : renderAgentView(); }
+function setTab(t, shine){
+  view.tab = t;
+  $('#tab-agent').setAttribute('aria-selected', t==='agent');
+  $('#tab-md').setAttribute('aria-selected', t==='md');
+  render(shine); window.scrollTo({top:0});
+}
+$('#tab-agent').onclick = () => setTab('agent', true);
+$('#tab-md').onclick = () => setTab('md');
+
+(async () => {
+  $('#demoBanner').hidden = !isDemo;
+  try { await load(mdKey); render(); }
+  catch(err){
+    $('#app').innerHTML = `<div class="empty"><b>The tracker didn’t load</b>${esc(err.message)}. Check that the Apps Script is deployed with access set to Anyone, then refresh.</div>`;
+  }
+})();
+</script>
+</body>
+</html>
